@@ -118,7 +118,8 @@ async def upload_pdfs(job_id: str, files: List[UploadFile] = File(...)) -> Dict[
     for upload in files:
         if not upload.filename:
             continue
-        if not upload.filename.lower().endswith(".pdf"):
+        suffix = Path(upload.filename).suffix.lower()
+        if suffix not in {".pdf", ".png"}:
             continue
         dest_path = upload_base / Path(upload.filename).name
         with dest_path.open("wb") as f:
@@ -127,7 +128,7 @@ async def upload_pdfs(job_id: str, files: List[UploadFile] = File(...)) -> Dict[
         saved += 1
 
     if saved == 0:
-        raise HTTPException(status_code=400, detail="No PDF files uploaded")
+        raise HTTPException(status_code=400, detail="No PDF or PNG files uploaded")
     return {"saved": saved}
 
 
@@ -202,7 +203,7 @@ async def process_job(job_id: str) -> None:
     job = get_job(job_id)
     tasks = []
     for file_progress in job.files.values():
-        tasks.append(asyncio.create_task(process_single_pdf(job, file_progress)))
+        tasks.append(asyncio.create_task(process_single_file(job, file_progress)))
     await asyncio.gather(*tasks, return_exceptions=True)
 
     if any(fp.status == "error" for fp in job.files.values()):
@@ -211,11 +212,11 @@ async def process_job(job_id: str) -> None:
         job.status = "completed"
 
 
-async def process_single_pdf(job: JobState, file_progress: FileProgress) -> None:
+async def process_single_file(job: JobState, file_progress: FileProgress) -> None:
     async with pdf_semaphore:
         try:
             file_progress.status = "rendering"
-            images = await render_pdf_to_images(job.job_id, file_progress)
+            images = await prepare_images(job.job_id, file_progress)
             file_progress.pages.total = len(images)
             file_progress.status = "ocr"
             ocr_texts: List[str] = []
@@ -236,6 +237,20 @@ async def process_single_pdf(job: JobState, file_progress: FileProgress) -> None
         except Exception as exc:
             file_progress.status = "error"
             file_progress.error = str(exc)
+
+
+async def prepare_images(job_id: str, file_progress: FileProgress) -> List[Path]:
+    suffix = file_progress.path.suffix.lower()
+    if suffix == ".pdf":
+        return await render_pdf_to_images(job_id, file_progress)
+    if suffix == ".png":
+        images_dir = IMAGE_DIR / job_id / Path(file_progress.filename).stem
+        images_dir.mkdir(parents=True, exist_ok=True)
+        destination = images_dir / Path(file_progress.filename).name
+        if destination != file_progress.path:
+            shutil.copy(file_progress.path, destination)
+        return [destination]
+    raise ValueError("Unsupported file type. Only PDF and PNG files are allowed.")
 
 
 async def render_pdf_to_images(job_id: str, file_progress: FileProgress) -> List[Path]:

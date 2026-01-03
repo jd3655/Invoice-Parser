@@ -32,20 +32,26 @@
       </section>
 
       <section class="panel">
-        <h2>Upload PDFs</h2>
+        <h2>Upload PDFs or PNGs</h2>
         <div id="dropZone" class="drop-zone">
-          <p>Drag and drop PDF files here</p>
+          <p>Drag and drop PDF or PNG invoice files here</p>
           <div class="buttons">
             <label class="btn">
               Select Files
-              <input id="fileInput" type="file" accept="application/pdf" multiple hidden />
+              <input
+                id="fileInput"
+                type="file"
+                accept="application/pdf,image/png"
+                multiple
+                hidden
+              />
             </label>
             <label class="btn secondary">
               Select Folder
               <input id="folderInput" type="file" webkitdirectory directory multiple hidden />
             </label>
           </div>
-          <p class="hint">Only PDF files will be uploaded.</p>
+          <p class="hint">Only PDF and PNG files will be uploaded.</p>
         </div>
         <div id="fileList" class="file-list"></div>
         <button id="startBtn" class="btn primary">Start Processing</button>

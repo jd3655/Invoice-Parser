@@ -22,8 +22,11 @@ function updateFileList() {
 }
 
 function addFiles(files) {
-  const pdfs = Array.from(files).filter((f) => f.name.toLowerCase().endsWith(".pdf"));
-  selectedFiles = [...selectedFiles, ...pdfs];
+  const allowed = Array.from(files).filter((f) => {
+    const name = f.name.toLowerCase();
+    return name.endsWith(".pdf") || name.endsWith(".png");
+  });
+  selectedFiles = [...selectedFiles, ...allowed];
   updateFileList();
 }
 
@@ -119,7 +122,7 @@ async function pollStatus() {
 
 startBtn.addEventListener("click", async () => {
   if (!selectedFiles.length) {
-    alert("Please select at least one PDF.");
+    alert("Please select at least one PDF or PNG.");
     return;
   }
   startBtn.disabled = true;
