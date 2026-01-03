@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import io
 import os
 import shutil
@@ -7,6 +8,8 @@ import zipfile
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
+
+import mimetypes
 
 import fitz  # type: ignore
 from fastapi import FastAPI, File, HTTPException, UploadFile
@@ -100,9 +103,12 @@ def normalize_base_url(base_url: str) -> str:
 
 
 def build_image_url(image_path: Path) -> str:
-    """Return a file:// URL for the provided image path."""
+    """Return a data: URL containing the base64-encoded image contents."""
 
-    return image_path.resolve().as_uri()
+    mime_type, _ = mimetypes.guess_type(image_path.as_posix())
+    mime_type = mime_type or "application/octet-stream"
+    encoded = base64.b64encode(image_path.read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
 
 
 def get_job(job_id: str) -> JobState:

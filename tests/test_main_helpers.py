@@ -17,14 +17,14 @@ class TestMainHelpers(unittest.TestCase):
             with self.subTest(incoming=incoming):
                 self.assertEqual(normalize_base_url(incoming), expected)
 
-    def test_build_image_url_uses_file_scheme(self) -> None:
+    def test_build_image_url_returns_data_url(self) -> None:
         tmp_file = Path("data/test-image.png")
         tmp_file.parent.mkdir(parents=True, exist_ok=True)
         try:
             tmp_file.write_bytes(b"fakepng")
             result = build_image_url(tmp_file)
-            self.assertTrue(result.startswith("file://"))
-            self.assertIn(tmp_file.resolve().name, result)
+            self.assertTrue(result.startswith("data:"))
+            self.assertIn("base64,", result)
         finally:
             if tmp_file.exists():
                 os.remove(tmp_file)
