@@ -27,6 +27,7 @@ INDEX_FILE = STATIC_DIR / "index.html"
 
 PDF_CONCURRENCY = 2
 PAGE_CONCURRENCY = 2
+RENDER_SCALE = 3  # higher DPI for clearer OCR
 
 
 class JobConfig(BaseModel):
@@ -249,7 +250,7 @@ async def render_pdf_to_images(job_id: str, file_progress: FileProgress) -> List
         try:
             for page_number in range(doc.page_count):
                 page = doc.load_page(page_number)
-                pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
+                pix = page.get_pixmap(matrix=fitz.Matrix(RENDER_SCALE, RENDER_SCALE))
                 filename = f"page_{page_number + 1:03}.png"
                 image_path = images_dir / filename
                 pix.save(image_path.as_posix(), output="png")
@@ -274,13 +275,15 @@ async def ocr_image(image_path: Path, model: str, base_url: str) -> str:
             "Perform OCR on the provided invoice page image. "
             "Preserve all numbers, punctuation, currency symbols, and line breaks. "
             "Keep table alignment as text where possible. "
-            "Return only the transcribed text. If the page is blank, return an empty string."
+            "Return only the transcribed text. If the page is blank, return an empty string. "
+            "If the content is faint or low-contrast, do your best to transcribe it accurately."
         )
 
         def _call() -> str:
             response = client.chat.completions.create(
                 model=model,
                 temperature=0,
+                max_tokens=2048,
                 messages=[
                     {"role": "system", "content": prompt},
                     {
@@ -290,7 +293,10 @@ async def ocr_image(image_path: Path, model: str, base_url: str) -> str:
                                 "type": "text",
                                 "text": "OCR this invoice page and return raw text only.",
                             },
-                            {"type": "image_url", "image_url": {"url": image_data_url}},
+                            {
+                                "type": "image_url",
+                                "image_url": {"url": image_data_url, "detail": "high"},
+                            },
                         ],
                     },
                 ],
