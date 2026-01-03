@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Local PDF Invoice Parser</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Local PDF Invoice Parser</h1>
+        <p>Process invoices via your local LMStudio server. No cloud calls.</p>
+      </header>
+
+      <section class="panel">
+        <h2>Configuration</h2>
+        <div class="config-grid">
+          <label>
+            LMStudio Base URL
+            <input id="baseUrl" type="text" value="http://127.0.0.1:1234" />
+          </label>
+          <label>
+            Model Name
+            <input id="model" type="text" value="gpt-4o-mini-vision" />
+          </label>
+          <label class="checkbox">
+            <input id="perPage" type="checkbox" />
+            Also save per-page .txt files
+          </label>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Upload PDFs</h2>
+        <div id="dropZone" class="drop-zone">
+          <p>Drag and drop PDF files here</p>
+          <div class="buttons">
+            <label class="btn">
+              Select Files
+              <input id="fileInput" type="file" accept="application/pdf" multiple hidden />
+            </label>
+            <label class="btn secondary">
+              Select Folder
+              <input id="folderInput" type="file" webkitdirectory directory multiple hidden />
+            </label>
+          </div>
+          <p class="hint">Only PDF files will be uploaded.</p>
+        </div>
+        <div id="fileList" class="file-list"></div>
+        <button id="startBtn" class="btn primary">Start Processing</button>
+      </section>
+
+      <section class="panel">
+        <h2>Progress</h2>
+        <div id="progressArea" class="progress-area"></div>
+        <div id="downloadArea" class="download-area hidden">
+          <p>Outputs saved to disk. You can download them as a ZIP:</p>
+          <button id="downloadBtn" class="btn primary">Download ZIP</button>
+        </div>
+      </section>
+    </div>
+
+    <script src="/static/script.js"></script>
+  </body>
+</html>
