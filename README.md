@@ -49,6 +49,7 @@ Then open http://localhost:8000/ in your browser.
 - Outputs: `data/output/<job_id>/<pdf_stem>.txt` (and optional per-page files in a subfolder)
 
 ## Notes
-- OCR calls use the OpenAI SDK configured with `base_url=<LMStudio>/v1` and `api_key="lm-studio"`.
+- OCR calls use the OpenAI SDK configured with `base_url=<LMStudio>/v1` and `api_key="lm-studio"`. The app accepts either `<LMStudio>` or `<LMStudio>/v1` and normalizes the URL automatically.
+- Vision requests send `image_url` as a local `file://...` URI (rather than base64 data URLs) to align with LMStudio/DeepSeek OCR expectations. Run LMStudio on the same host so it can read the temporary image files.
 - Rendering uses PyMuPDF at 2x scaling for better OCR fidelity.
 - Concurrency is limited (PDFs: 2 at a time; pages: 2 at a time) to avoid overwhelming the local model.

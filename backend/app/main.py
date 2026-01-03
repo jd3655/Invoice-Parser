@@ -1,5 +1,4 @@
 import asyncio
-import base64
 import io
 import os
 import shutil
@@ -84,6 +83,26 @@ def ensure_directories() -> None:
     """Create required data directories."""
     for path in [UPLOAD_DIR, IMAGE_DIR, OUTPUT_DIR]:
         path.mkdir(parents=True, exist_ok=True)
+
+
+def normalize_base_url(base_url: str) -> str:
+    """Normalize LMStudio/OpenAI-compatible base URLs.
+
+    Users often provide either ``http://localhost:1234`` or ``http://localhost:1234/v1``
+    depending on the LMStudio CLI examples. This helper deduplicates any trailing
+    ``/v1`` segment and ensures the final URL always ends with ``/v1`` so that API
+    calls work regardless of the input format.
+    """
+
+    trimmed = base_url.rstrip("/")
+    trimmed = trimmed.removesuffix("/v1")
+    return f"{trimmed}/v1"
+
+
+def build_image_url(image_path: Path) -> str:
+    """Return a file:// URL for the provided image path."""
+
+    return image_path.resolve().as_uri()
 
 
 def get_job(job_id: str) -> JobState:
@@ -281,10 +300,8 @@ async def render_pdf_to_images(job_id: str, file_progress: FileProgress) -> List
 
 async def ocr_image(image_path: Path, model: str, base_url: str) -> str:
     async with page_semaphore:
-        image_bytes = image_path.read_bytes()
-        encoded_image = base64.b64encode(image_bytes).decode("utf-8")
-        image_data_url = f"data:image/png;base64,{encoded_image}"
-        client = OpenAI(base_url=f"{base_url.rstrip('/')}/v1", api_key="lm-studio")
+        client = OpenAI(base_url=normalize_base_url(base_url), api_key="lm-studio")
+        image_url = build_image_url(image_path)
 
         prompt = (
             "Perform OCR on the provided invoice page image. "
@@ -310,7 +327,7 @@ async def ocr_image(image_path: Path, model: str, base_url: str) -> str:
                             },
                             {
                                 "type": "image_url",
-                                "image_url": {"url": image_data_url, "detail": "high"},
+                                "image_url": {"url": image_url, "detail": "high"},
                             },
                         ],
                     },
