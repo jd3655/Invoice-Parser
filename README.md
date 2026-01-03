@@ -20,6 +20,14 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
+If you want to force wheel-only installs (to avoid slow/fragile source builds), use:
+
+```bash
+pip install --only-binary=:all: -r requirements.txt
+```
+
+> Note: Older PyMuPDF pins may not ship wheels for newer Python versions (e.g., Python 3.14 on Apple Silicon), causing `pip` to attempt a source build that fails during MuPDF/zlib compilation. The current dependency pinning uses a recent PyMuPDF wheel to prevent this.
+
 ## Run the server
 ```bash
 cd backend
